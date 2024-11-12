@@ -1,4 +1,5 @@
 library(tidyverse)
+library(ggtext)
 library(here)
 
 democracy_data <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2024/2024-11-05/democracy_data.csv')
@@ -7,14 +8,13 @@ democracy_data <- readr::read_csv('https://raw.githubusercontent.com/rfordatasci
 # Background: 
 bg_color <- "#3D3131"
 # Highlight: 
-hl_color <- "#F54242"
+hl_color <- "#61926F"
 # Complementary
-cm_color <- "#42F575"
+cm_color <- "#F54242"
 # Neutral: 
 nt_color <- "#B8B2AD"
-
-#60A072
-
+# Texto
+txt_color <- "#B8B2AD"
 
 democracy_data %>%
   filter(!is.na(is_democracy)) %>%
@@ -23,11 +23,8 @@ democracy_data %>%
   group_by(is_democracy) %>%
   mutate(
     is_last = year == max(year), # Identificar el último punto
-    label = if_else(is_last, 
-                    if_else(is_democracy, "Democracias", "Dictaduras"), 
-                    NA),
     value_label = if_else(is_last, as.character(n), NA), # Etiqueta con el valor del último punto
-    vjust_value = if_else(is_democracy, 1.8, -1) # Ajustar posición vertical para cada tipo
+    hjust_value = if_else(is_democracy == "TRUE", -0.55, -1.10) # Ajuste de hjust por categoría
   ) %>% 
   ggplot(aes(x=year, y=n, color=is_democracy)) +
   geom_line(size=3) + 
@@ -39,40 +36,47 @@ democracy_data %>%
     expand = expansion(mult = c(0.05, 0.2)) # Ampliar margen derecho del eje X
   ) +
   scale_color_manual(
-    values = c("TRUE" = hl_color, "FALSE" = nt_color),
-    labels = c("TRUE" = "Democracias", "FALSE" = "Dictaduras") 
+    values = c("TRUE" = hl_color, "FALSE" = cm_color) 
   ) +
   geom_text(
-    aes(label = value_label, vjust = vjust_value), # Ajustar posición vertical de los valores
-    size = 4, # Tamaño del texto de los valores
+    aes(label = value_label, hjust = hjust_value), 
+    size = 4, 
+    fontface  = "bold",
     na.rm = TRUE
   ) +
-  geom_text(
-    aes(label = label),
-    hjust = -0.2, # Ajuste de posición horizontal
-    size = 5, # Tamaño del texto
-    na.rm = TRUE # Ignorar valores faltantes (sin etiquetas)
-  ) +
   labs(
-    title = "AAAA",
+    title = glue::glue("<span style='color:{hl_color};'>Democracy</span> vs. <span style='color:{cm_color};'>Dictactorship</span>"),
     x = "", 
     y = "", 
-    subtitle = "", 
-    caption = paste0("&#xe61b","@pablohaya") 
+    subtitle = "Number of regime types per year", 
+    caption = paste0("@pablohaya | Source: Bjørnskov and Rode (2019)") 
   ) +
   theme(
-    plot.background = element_rect(fill = bg_color), 
-    plot.caption = element_text(color= bg_color),
+    plot.background = element_rect(fill = bg_color),
+    plot.title = element_markdown(size = 16, color= txt_color, face = "bold"),
+    plot.subtitle = element_markdown(size = 12, color= txt_color, face = "italic"),
+    plot.caption = element_text(color= nt_color),
     panel.background = element_rect(fill = bg_color),
     panel.border = element_blank(), 
     panel.grid = element_blank(),
-    axis.text.x = element_text(color = nt_color, size=14),
+    axis.text.x = element_text(color = txt_color, size=14),
     axis.text.y = element_blank(), 
-    axis.ticks = element_blank(),
+    axis.ticks.length = unit(8, "pt"),
+    axis.ticks.x = element_line(color = nt_color, size=1.5),
     legend.position = "none"
   )
 
-# Save the plot in landscape format
+# Save the plot in-feed instagram format
 ggsave(here("output/minimalist_democracy_dictatorship.png"), 
-        width = 24, height = 12, dpi = 300, unit="cm", 
+        width = 1080, height = 1350, unit="px", 
         bg = bg_color)
+
+# Save the plot in-feed square instagram format
+ggsave(here("output/minimalist_democracy_dictatorship_square.png"), 
+       width = 1080, height = 1080, unit="px", 
+       bg = bg_color)
+
+# Instagram in-feed
+# 1080 x 1350 pixeles (4:5)
+# Instagram 
+# 1080x1920 (9:16)
